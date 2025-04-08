@@ -3,5 +3,5 @@
 
 __Scripture Chase Game__
 
-Repo: [git.purplecello.org/KylerOlsen/CS2450-Final-Project](https://git.purplecello.org/KylerOlsen/CS2450-Final-Project.git)
-Mirror: [github.com/KylerOlsen/CS2450-Final-Project](https://github.com/KylerOlsen/CS2450-Final-Project.git)
+- Repo: [git.purplecello.org/KylerOlsen/CS2450-Final-Project](https://git.purplecello.org/KylerOlsen/CS2450-Final-Project.git)
+- Mirror: [github.com/KylerOlsen/CS2450-Final-Project](https://github.com/KylerOlsen/CS2450-Final-Project.git)
