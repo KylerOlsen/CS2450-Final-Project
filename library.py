@@ -33,24 +33,36 @@ class Library:
         self.__games[game_num].add_player(name)
 
     def get_verse(self, difficulty: int):
-        print(self.__select_verse(difficulty))
+        url = self.__select_verse(difficulty)
+        text = self.__get_verse_text(url)
+        print(text, end='\n\n')
 
     def __select_verse(self, difficulty: int) -> str:
 
         difficulty_verses = self.__get_verses_by_difficulty(difficulty)
 
-        # print(len(difficulty_verses))
-
         return difficulty_verses[random.randint(0,len(difficulty_verses)-1)]
 
     def __get_verse_text(self, url: str) -> str:
-        volume, book, chapter, verse = url[1:].split('/')
+        lang = 'eng'
+        volume, book_url, chapter_url, verse_url = url[1:].split('/')
 
-        if volume == 'ot': pass
-        elif volume == 'nt': pass
-        elif volume == 'bofm': pass
-        elif volume == 'dc-testament': pass
-        elif volume == 'pgp': pass
+        if volume == 'ot': filename = f"data/{lang}.old-testament.json"
+        elif volume == 'nt': filename = f"data/{lang}.new-testament.json"
+        elif volume == 'bofm': filename = f"data/{lang}.book-of-mormon.json"
+        elif volume == 'dc-testament': filename = f"data/{lang}.doctrine-and-covenants.json"
+        elif volume == 'pgp': filename = f"data/{lang}.pearl-of-great-price.json"
+
+        with open(filename, encoding='utf-8') as file:
+            data = json.load(file)
+        for book in data['books']:
+            if book['lds_slug'] == book_url:
+                for chapter in book['chapters']:
+                    if chapter['chapter'] == int(chapter_url):
+                        for verse in chapter['verses']:
+                            if verse['verse'] == int(verse_url):
+                                return verse['text']
+        raise ValueError(f'ERROR: VERSE NOT FOUND ({url})')
 
     def __get_verses_by_difficulty(self, difficulty: int) -> list[str]:
         real_difficulty_upper = pow((10-difficulty)/9, 2) * 500
@@ -60,7 +72,7 @@ class Library:
         for key, value in self.__verses.items():
             for i, diff in enumerate(value):
                 if real_difficulty_lower <= diff <= real_difficulty_upper:
-                    difficulty_verses.append(f"{key}/{i}")
+                    difficulty_verses.append(f"{key}/{i+1}")
 
         return difficulty_verses
 
