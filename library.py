@@ -32,10 +32,11 @@ class Library:
                 game_num = len(self.__games) - 1
         self.__games[game_num].add_player(name)
 
-    def get_verse(self, difficulty: int):
+    def get_verse(self, difficulty: int, game: Game):
         url = self.__select_verse(difficulty)
         text = self.__get_verse_text(url)
-        print(text, end='\n\n')
+
+        game.new_verse(url, text)
 
     def __select_verse(self, difficulty: int) -> str:
 
@@ -76,8 +77,3 @@ class Library:
 
         return difficulty_verses
 
-
-if __name__ == '__main__':
-
-    lib = Library()
-    for i in range(11): lib.get_verse(i)
