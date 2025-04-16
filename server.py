@@ -3,7 +3,7 @@
 # Apr 2025
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import NamedTuple, Self, TYPE_CHECKING
 import select
 import datetime
 import network_utilities
@@ -13,10 +13,38 @@ if TYPE_CHECKING:
     from library import Library
 
 
+class URL(NamedTuple):
+    volume: str
+    book: str
+    chapter: int
+    verse: int
+
+    def __str__(self) -> str:
+        if not self.volume: return "/"
+        if not self.book: return f"/{self.volume}"
+        if not self.chapter: return f"/{self.volume}/{self.book}"
+        if not self.verse: return f"/{self.volume}/{self.book}/{self.chapter}"
+        else: return f"/{self.volume}/{self.book}/{self.chapter}/{self.verse}"
+
+    @classmethod
+    def from_str(cls, url: str) -> Self:
+        parts = url.strip('/').split('/')
+        if len(parts) >= 1: volume = parts[0]
+        else: volume = ""
+        if len(parts) >= 2: book = parts[1]
+        else: book = ""
+        if len(parts) >= 3: chapter = int(parts[2])
+        else: chapter = 0
+        if len(parts) >= 4: verse = int(parts[3])
+        else: verse = 0
+
+        return cls(volume, book, chapter, verse)
+
+
 class Game:
 
     __library: Library
-    __current_url: str
+    __current_url: URL
     __clients: list[Player]
     __round_points: list[int]
     __total_scores: list[int]
@@ -26,7 +54,7 @@ class Game:
 
     def __init__(self, library: Library):
         self.__library = library
-        self.__current_url = ""
+        self.__current_url = URL.from_str('')
         self.__clients = []
         self.__round_points = []
         self.__total_scores = []
@@ -57,17 +85,17 @@ class Game:
 
     def new_verse(self, url: str, text: str):
         for player in self.__clients:
-            self.__current_url = url
+            self.__current_url = URL.from_str(url)
             player.new_verse(text)
 
     def guess_reference(self, url: str, player: Player):
         if self.__active and not self.__finished:
-            if url == self.__current_url:
+            if url == str(self.__current_url):
                 player.guess_correct()
                 for i, points in enumerate(self.__round_points):
                     self.__total_scores[i] += points
                     self.__clients[i].verse_guessed(
-                        points, self.__current_url, player.name)
+                        points, str(self.__current_url), player.name)
             else:
                 player.guess_incorrect()
 
