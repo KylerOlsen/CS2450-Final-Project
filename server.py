@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import select
+import datetime
 import network_utilities
 
 if TYPE_CHECKING:
@@ -20,6 +22,7 @@ class Game:
     __total_scores: list[int]
     __active: bool
     __finished: bool
+    __created: datetime.datetime
 
     def __init__(self, library: Library):
         self.__library = library
@@ -29,6 +32,7 @@ class Game:
         self.__total_scores = []
         self.__active = False
         self.__finished = False
+        self.__created = datetime.datetime.now()
 
     @property
     def active(self) -> bool: return self.__active
@@ -36,9 +40,9 @@ class Game:
     @property
     def finished(self) -> bool: return self.__finished
 
-    def add_player(self, name: str, socket: socket):
+    def add_player(self, name: str, conn: socket):
         if not self.__active:
-            self.__clients.append(Player(name, self, socket))
+            self.__clients.append(Player(name, self, conn))
             self.__total_scores.append(0)
             for player in self.__clients:
                 player.player_joined(name)
@@ -69,6 +73,21 @@ class Game:
 
     def end_game(self):
         self.__finished = True
+        for player in self.__clients:
+            player.game_over(
+                [i.name for i in self.__clients], self.__total_scores)
+
+    def update(self):
+        if not self.__active and (
+            datetime.datetime.now() - self.__created >=
+            datetime.timedelta(minutes=10)
+        ) or (
+            datetime.datetime.now() - self.__created >=
+            datetime.timedelta(1)
+        ): self.__finished = True
+        if not self.__finished:
+            for player in self.__clients:
+                player.update()
 
 
 class Player:
@@ -77,10 +96,10 @@ class Player:
     __game: Game
     __client: socket
 
-    def __init__(self, name: str, game: Game, socket: socket):
+    def __init__(self, name: str, game: Game, conn: socket):
         self.__name = name
         self.__game = game
-        self.__client = socket
+        self.__client = conn
 
     @property
     def name(self) -> str: return self.__name
@@ -115,16 +134,20 @@ class Player:
         data += network_utilities.pack_string_array(players)
         data += network_utilities.pack_varint_array(scores)
         self.__client.send(data)
+        self.__client.close()
 
     def update(self):
-        packet_id = network_utilities.unpack_varint(self.__client)
-        if packet_id == 1:
-            self.__game.start_game()
-        elif packet_id == 2:
-            difficulty = network_utilities.unpack_varint(self.__client)
-            self.__game.start_round(difficulty)
-        elif packet_id == 3:
-            url = network_utilities.unpack_string(self.__client)
-            self.__game.guess_reference(url, self)
-        elif packet_id == 4:
-            self.__game.end_game()
+        ready_to_read, _, _ = select.select([self.__client], [], [], 0)
+        if ready_to_read:
+            packet_id = network_utilities.unpack_varint(self.__client)
+            if packet_id == 2:
+                self.__game.start_game()
+            elif packet_id == 3:
+                difficulty = network_utilities.unpack_varint(self.__client)
+                self.__game.start_round(difficulty)
+            elif packet_id == 4:
+                url = network_utilities.unpack_string(self.__client)
+                self.__game.guess_reference(url, self)
+            elif packet_id == 5:
+                self.__game.end_game()
+

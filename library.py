@@ -3,13 +3,12 @@
 # Apr 2025
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 import json
 import random
 import socket
-
-if TYPE_CHECKING:
-    from server import Game
+import select
+import network_utilities
+from server import Game
 
 
 class Library:
@@ -34,23 +33,31 @@ class Library:
             with self.__socket as s:
                 s.bind((self.__host, self.__port))
                 s.listen(1)
+                s.setblocking(False)
                 while True:
-                    conn, _ = s.accept()
-                    ...
+                    ready_to_read, _, _ = select.select([s], [], [], 0)
+                    for game in self.__games[:]:
+                        if not game.finished: game.update()
+                        else: self.__games.remove(game)
+                    if ready_to_read:
+                        conn, _ = s.accept()
+                        conn.setblocking(False)
+                        if network_utilities.unpack_varint(conn) == 1:
+                            name = network_utilities.unpack_string(conn)
+                            self.join_game(name, conn)
         except KeyboardInterrupt:
             print("KeyboardInterrupt\nExiting...")
             return
 
-    def join_game(self, name: str, game_num: int = -1):
-        if game_num == -1:
-            for i, game in enumerate(self.__games):
-                if not game.active:
-                    game_num = i
-                    break
-            else:
-                self.__games.append(Game())
-                game_num = len(self.__games) - 1
-        self.__games[game_num].add_player(name)
+    def join_game(self, name: str, conn: socket.socket):
+        for i, game in enumerate(self.__games):
+            if not game.active:
+                game_num = i
+                break
+        else:
+            self.__games.append(Game(self))
+            game_num = len(self.__games) - 1
+        self.__games[game_num].add_player(name, conn)
 
     def get_verse(self, difficulty: int, game: Game):
         url = self.__select_verse(difficulty)

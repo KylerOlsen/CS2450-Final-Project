@@ -3,8 +3,9 @@
 # Apr 2025
 
 from __future__ import annotations
-import network_utilities
 import socket
+import select
+import network_utilities
 
 
 class Game:
@@ -17,44 +18,46 @@ class Game:
         self.__server = server
 
     def start_game(self):
-        data = network_utilities.pack_varint(1)
+        data = network_utilities.pack_varint(2)
         self.__server.send(data)
 
     def start_round(self, difficulty: int):
-        data = network_utilities.pack_varint(2)
+        data = network_utilities.pack_varint(3)
         data += network_utilities.pack_varint(difficulty)
         self.__server.send(data)
 
     def guess_reference(self, url: str):
-        data = network_utilities.pack_varint(3)
+        data = network_utilities.pack_varint(4)
         data += network_utilities.pack_string(url)
         self.__server.send(data)
 
     def end_game(self):
-        data = network_utilities.pack_varint(4)
+        data = network_utilities.pack_varint(5)
         self.__server.send(data)
 
     def update(self):
-        packet_id = network_utilities.unpack_varint(self.__server)
-        if packet_id == 1:
-            name = network_utilities.unpack_string(self.__server)
-            self.__player.player_joined(name)
-        elif packet_id == 2:
-            text = network_utilities.unpack_string(self.__server)
-            self.__player.new_verse(text)
-        elif packet_id == 3:
-            self.__player.guess_incorrect()
-        elif packet_id == 4:
-            self.__player.guess_correct()
-        elif packet_id == 5:
-            points = network_utilities.unpack_varint(self.__server)
-            url = network_utilities.unpack_string(self.__server)
-            player = network_utilities.unpack_string(self.__server)
-            self.__player.verse_guessed(points, url, player)
-        elif packet_id == 6:
-            players = network_utilities.unpack_string_array(self.__server)
-            scores = network_utilities.unpack_varint_array(self.__server)
-            self.__player.game_over(players, scores)
+        ready_to_read, _, _ = select.select([self.__server], [], [], 0)
+        if ready_to_read:
+            packet_id = network_utilities.unpack_varint(self.__server)
+            if packet_id == 1:
+                name = network_utilities.unpack_string(self.__server)
+                self.__player.player_joined(name)
+            elif packet_id == 2:
+                text = network_utilities.unpack_string(self.__server)
+                self.__player.new_verse(text)
+            elif packet_id == 3:
+                self.__player.guess_incorrect()
+            elif packet_id == 4:
+                self.__player.guess_correct()
+            elif packet_id == 5:
+                points = network_utilities.unpack_varint(self.__server)
+                url = network_utilities.unpack_string(self.__server)
+                player = network_utilities.unpack_string(self.__server)
+                self.__player.verse_guessed(points, url, player)
+            elif packet_id == 6:
+                players = network_utilities.unpack_string_array(self.__server)
+                scores = network_utilities.unpack_varint_array(self.__server)
+                self.__player.game_over(players, scores)
 
 
 class Player:
@@ -80,7 +83,12 @@ class Player:
     def score(self) -> int: return self.__score
 
     def join_game(self, host: str = 'localhost', port: int = 7788):
-        pass
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn.connect((host, port))
+        data = network_utilities.pack_varint(1)
+        data += network_utilities.pack_string(self.name)
+        conn.send(data)
+        self.__game = Game(self, conn)
 
     def start_game(self):
         if self.__game is not None:
@@ -99,20 +107,30 @@ class Player:
             self.__game.end_game()
 
     def player_joined(self, name: str):
-        pass
+        if self.__game is not None:
+            pass
 
     def new_verse(self, text: str):
-        pass
+        if self.__game is not None:
+            pass
 
     def guess_incorrect(self):
-        pass
+        if self.__game is not None:
+            pass
 
     def guess_correct(self):
-        pass
+        if self.__game is not None:
+            pass
 
     def verse_guessed(self, points: int, url: str, player: str):
-        pass
+        if self.__game is not None:
+            pass
 
     def game_over(self, players: list[str], scores: list[int]):
-        pass
+        if self.__game is not None:
+            pass
+
+    def update(self):
+        if self.__game is not None:
+            self.__game.update()
 
