@@ -6,20 +6,40 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 import random
+import socket
 
 if TYPE_CHECKING:
-    from game import Game
+    from server import Game
 
 
 class Library:
 
     __verses: dict
     __games: list[Game]
+    __host: str
+    __port: int
+    __socket: socket.socket
 
-    def __init__(self):
+    def __init__(self, host: str = '', port: int = 7788):
         with open("data/scripture-frequencies.json", encoding='utf-8') as file:
             self.__verses = json.load(file)
         self.__games = []
+
+        self.__host = host
+        self.__port = port
+        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    def serve_forever(self):
+        try:
+            with self.__socket as s:
+                s.bind((self.__host, self.__port))
+                s.listen(1)
+                while True:
+                    conn, _ = s.accept()
+                    ...
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt\nExiting...")
+            return
 
     def join_game(self, name: str, game_num: int = -1):
         if game_num == -1:
@@ -48,11 +68,16 @@ class Library:
         lang = 'eng'
         volume, book_url, chapter_url, verse_url = url[1:].split('/')
 
-        if volume == 'ot': filename = f"data/{lang}.old-testament.json"
-        elif volume == 'nt': filename = f"data/{lang}.new-testament.json"
-        elif volume == 'bofm': filename = f"data/{lang}.book-of-mormon.json"
-        elif volume == 'dc-testament': filename = f"data/{lang}.doctrine-and-covenants.json"
-        elif volume == 'pgp': filename = f"data/{lang}.pearl-of-great-price.json"
+        if volume == 'ot':
+            filename = f"data/{lang}.old-testament.json"
+        elif volume == 'nt':
+            filename = f"data/{lang}.new-testament.json"
+        elif volume == 'bofm':
+            filename = f"data/{lang}.book-of-mormon.json"
+        elif volume == 'dc-testament':
+            filename = f"data/{lang}.doctrine-and-covenants.json"
+        elif volume == 'pgp':
+            filename = f"data/{lang}.pearl-of-great-price.json"
 
         with open(filename, encoding='utf-8') as file:
             data = json.load(file)
