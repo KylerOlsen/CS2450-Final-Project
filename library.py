@@ -30,6 +30,7 @@ class Library:
 
     def serve_forever(self):
         try:
+            print(f"Starting server at {self.__host}:{self.__port}")
             with self.__socket as s:
                 s.bind((self.__host, self.__port))
                 s.listen(1)
