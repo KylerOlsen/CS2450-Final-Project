@@ -105,24 +105,29 @@ class Player:
     def name(self) -> str: return self.__name
 
     def player_joined(self, name: str):
+        print(f">> (1) player_joined({name})")
         data = network_utilities.pack_varint(1)
         data += network_utilities.pack_string(name)
         self.__client.send(data)
 
     def new_verse(self, text: str):
+        print(f">> (2) new_verse({text})")
         data = network_utilities.pack_varint(2)
         data += network_utilities.pack_string(text)
         self.__client.send(data)
 
     def guess_incorrect(self):
+        print(">> (3) guess_incorrect()")
         data = network_utilities.pack_varint(3)
         self.__client.send(data)
 
     def guess_correct(self):
+        print(">> (4) guess_correct()")
         data = network_utilities.pack_varint(4)
         self.__client.send(data)
 
     def verse_guessed(self, points: int, url: str, player: str):
+        print(f">> (5) verse_guessed({points}, {url})")
         data = network_utilities.pack_varint(5)
         data += network_utilities.pack_varint(points)
         data += network_utilities.pack_string(url)
@@ -130,6 +135,7 @@ class Player:
         self.__client.send(data)
 
     def game_over(self, players: list[str], scores: list[int]):
+        print(f">> (6) game_over({len(players)}, {len(scores)})")
         data = network_utilities.pack_varint(6)
         data += network_utilities.pack_string_array(players)
         data += network_utilities.pack_varint_array(scores)
@@ -141,13 +147,17 @@ class Player:
         if ready_to_read:
             packet_id = network_utilities.unpack_varint(self.__client)
             if packet_id == 2:
+                print("<< (2) start_game()")
                 self.__game.start_game()
             elif packet_id == 3:
                 difficulty = network_utilities.unpack_varint(self.__client)
+                print(f"<< (3) start_round({difficulty})")
                 self.__game.start_round(difficulty)
             elif packet_id == 4:
                 url = network_utilities.unpack_string(self.__client)
+                print(f"<< (4) guess_reference({url}, {self.name})")
                 self.__game.guess_reference(url, self)
             elif packet_id == 5:
+                print("<< (5) end_game()")
                 self.__game.end_game()
 

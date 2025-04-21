@@ -1,10 +1,81 @@
 
 from client import Player
+from time import sleep
+from blessed import Terminal
+
 
 class UI:
 
     __player: Player
+    __verse: str
+    __in_game: bool
+    __game_over: bool
+    __term: Terminal
+    __buffer: str
 
     def __init__(self, playername: str, host: str='localhost', port: int=7788):
-        self.__player = Player(playername)
-        self.__player.join_game()
+        self.__player = Player(playername, self)
+        self.__player.join_game(host, port)
+        self.__verse = ""
+        self.__in_game = False
+        self.__game_over = False
+        self.__term = Terminal()
+        self.__buffer = ""
+
+    def get_line(self):
+        with self.__term.cbreak():
+            val = self.__term.inkey(timeout=0)
+            if not val:
+                return None
+            if val.is_sequence:
+                if val.name == 'KEY_ENTER':
+                    line = self.__buffer
+                    self.__buffer = ""
+                    print()
+                    return line
+                elif val.name == 'KEY_BACKSPACE':
+                    self.__buffer = self.__buffer[:-1]
+                    print(f'\r{self.__term.clear_eol}{self.__buffer}', end='', flush=True)
+            else:
+                self.__buffer += val
+                print(val, end='', flush=True)
+        return None
+
+    def loop(self):
+        while not self.__game_over:
+            self.__player.update()
+            if text := self.get_line():
+                if self.__in_game:
+                    self.__player.guess_reference(text)
+                elif text == 'Start Game':
+                    self.__player.start_game()
+                    self.__player.new_round(1)
+            sleep(0.1)
+
+    def player_joined(self, name: str):
+        print(f"{name} Joined the Game")
+
+    def new_verse(self, text: str):
+        self.__in_game = True
+        self.__verse = text
+        print(self.__verse)
+
+    def guess_incorrect(self):
+        print("That guess was incorrect.")
+        print(self.__verse)
+
+    def guess_correct(self):
+        print("That guess was correct!")
+
+    def verse_guessed(self, points: int, url: str, player: str):
+        print(f"The verse has been guessed. It is {url}.")
+        print(f"You have been awarded {points} points for your guess.")
+
+    def game_over(self, players: list[str], scores: list[int]):
+        self.__game_over = True
+        print("--- THANKS FOR PLAYING! ---")
+        for player, score in players, scores:
+            if player == self.__player.name:
+                print(f"  * {player}: {score} *")
+            else:
+                print(f"    {player}: {score}")

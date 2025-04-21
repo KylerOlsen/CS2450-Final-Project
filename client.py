@@ -3,9 +3,13 @@
 # Apr 2025
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import socket
 import select
 import network_utilities
+
+if TYPE_CHECKING:
+    from ui import UI
 
 
 class Game:
@@ -66,12 +70,14 @@ class Player:
     __verse: str
     __score: int
     __game: Game | None
+    __ui: UI
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, ui: UI):
         self.__name = name
         self.__verse = ""
         self.__score = 0
         self.__game = None
+        self.__ui = ui
 
     @property
     def name(self) -> str: return self.__name
@@ -108,27 +114,29 @@ class Player:
 
     def player_joined(self, name: str):
         if self.__game is not None:
-            pass
+            self.__ui.player_joined(name)
 
     def new_verse(self, text: str):
         if self.__game is not None:
-            pass
+            self.__verse = text
+            self.__ui.new_verse(text)
 
     def guess_incorrect(self):
         if self.__game is not None:
-            pass
+            self.__ui.guess_incorrect()
 
     def guess_correct(self):
         if self.__game is not None:
-            pass
+            self.__ui.guess_correct()
 
     def verse_guessed(self, points: int, url: str, player: str):
         if self.__game is not None:
-            pass
+            self.__score += points
+            self.__ui.verse_guessed(points, url, player)
 
     def game_over(self, players: list[str], scores: list[int]):
         if self.__game is not None:
-            pass
+            self.__ui.game_over(players, scores)
 
     def update(self):
         if self.__game is not None:

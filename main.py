@@ -6,10 +6,12 @@ def server(host: str='', port: int=7788):
     lib.serve_forever()
 
 def client(playername: str, host: str='localhost', port: int=7788):
-    pass
+    from ui import UI
+    ui = UI(playername, host, port)
+    ui.loop()
 
 def main():
-    pass
+    client("TestPlayer")
 
 if __name__ == "__main__":
     main()

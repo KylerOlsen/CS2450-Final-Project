@@ -9,6 +9,7 @@ import socket
 import select
 import network_utilities
 from server import Game
+from time import sleep
 
 
 class Library:
@@ -41,11 +42,13 @@ class Library:
                         if not game.finished: game.update()
                         else: self.__games.remove(game)
                     if ready_to_read:
-                        conn, _ = s.accept()
+                        conn, addr = s.accept()
                         conn.setblocking(False)
                         if network_utilities.unpack_varint(conn) == 1:
                             name = network_utilities.unpack_string(conn)
+                            print(f"<< (1) join_game({name}, {addr})")
                             self.join_game(name, conn)
+                    sleep(0.1)
         except KeyboardInterrupt:
             print("KeyboardInterrupt\nExiting...")
             return
@@ -110,3 +113,7 @@ class Library:
 
         return difficulty_verses
 
+
+if __name__ == '__main__':
+    lib = Library()
+    lib.serve_forever()
