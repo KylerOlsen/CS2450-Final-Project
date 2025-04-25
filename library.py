@@ -9,6 +9,7 @@ import socket
 import select
 import network_utilities
 from server import Game
+from time import sleep
 
 
 class Library:
@@ -18,8 +19,9 @@ class Library:
     __host: str
     __port: int
     __socket: socket.socket
+    __bible_only: bool
 
-    def __init__(self, host: str = '', port: int = 7788):
+    def __init__(self, host: str = '', port: int = 7788, *, bible_only: bool = False):
         with open("data/scripture-frequencies.json", encoding='utf-8') as file:
             self.__verses = json.load(file)
         self.__games = []
@@ -28,8 +30,11 @@ class Library:
         self.__port = port
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        self.__bible_only = bible_only
+
     def serve_forever(self):
         try:
+            print(f"Starting server at {self.__host}:{self.__port}")
             with self.__socket as s:
                 s.bind((self.__host, self.__port))
                 s.listen(1)
@@ -40,11 +45,13 @@ class Library:
                         if not game.finished: game.update()
                         else: self.__games.remove(game)
                     if ready_to_read:
-                        conn, _ = s.accept()
+                        conn, addr = s.accept()
                         conn.setblocking(False)
                         if network_utilities.unpack_varint(conn) == 1:
                             name = network_utilities.unpack_string(conn)
+                            print(f"<< (1) join_game({name}, {addr})")
                             self.join_game(name, conn)
+                    sleep(0.1)
         except KeyboardInterrupt:
             print("KeyboardInterrupt\nExiting...")
             return
@@ -61,6 +68,7 @@ class Library:
 
     def get_verse(self, difficulty: int, game: Game):
         url = self.__select_verse(difficulty)
+        print(f"Verse Selected: {url}")
         text = self.__get_verse_text(url)
 
         game.new_verse(url, text)
@@ -103,9 +111,17 @@ class Library:
 
         difficulty_verses = []
         for key, value in self.__verses.items():
+            if self.__bible_only and not (key.startswith('/ot') or key.startswith('/nt')):
+                continue
             for i, diff in enumerate(value):
                 if real_difficulty_lower <= diff <= real_difficulty_upper:
                     difficulty_verses.append(f"{key}/{i+1}")
 
+        if not difficulty_verses: difficulty_verses.append('/pgp/js-h/1/17')
+
         return difficulty_verses
 
+
+if __name__ == '__main__':
+    lib = Library(bible_only=False)
+    lib.serve_forever()

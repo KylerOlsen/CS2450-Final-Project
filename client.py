@@ -3,9 +3,13 @@
 # Apr 2025
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import socket
 import select
 import network_utilities
+
+if TYPE_CHECKING:
+    from ui import UI
 
 
 class Game:
@@ -41,12 +45,16 @@ class Game:
             packet_id = network_utilities.unpack_varint(self.__server)
             if packet_id == 1:
                 name = network_utilities.unpack_string(self.__server)
-                self.__player.player_joined(name)
+                admin = bool(network_utilities.unpack_varint(self.__server))
+                self.__player.player_joined(name, admin)
             elif packet_id == 2:
                 text = network_utilities.unpack_string(self.__server)
                 self.__player.new_verse(text)
             elif packet_id == 3:
                 self.__player.guess_incorrect()
+            elif packet_id == 7:
+                url = network_utilities.unpack_string(self.__server)
+                self.__player.guess_partial_correct(url)
             elif packet_id == 4:
                 self.__player.guess_correct()
             elif packet_id == 5:
@@ -66,12 +74,16 @@ class Player:
     __verse: str
     __score: int
     __game: Game | None
+    __ui: UI
+    __admin: bool
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, ui: UI):
         self.__name = name
         self.__verse = ""
         self.__score = 0
         self.__game = None
+        self.__ui = ui
+        self.__admin = False
 
     @property
     def name(self) -> str: return self.__name
@@ -81,6 +93,9 @@ class Player:
 
     @property
     def score(self) -> int: return self.__score
+
+    @property
+    def admin(self) -> bool: return self.__admin
 
     def join_game(self, host: str = 'localhost', port: int = 7788):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -106,29 +121,36 @@ class Player:
         if self.__game is not None:
             self.__game.end_game()
 
-    def player_joined(self, name: str):
+    def player_joined(self, name: str, admin: bool):
         if self.__game is not None:
-            pass
+            if name == self.name: self.__admin = admin or self.__admin
+            self.__ui.player_joined(name, admin)
 
     def new_verse(self, text: str):
         if self.__game is not None:
-            pass
+            self.__verse = text
+            self.__ui.new_verse(text)
 
     def guess_incorrect(self):
         if self.__game is not None:
-            pass
+            self.__ui.guess_incorrect()
+
+    def guess_partial_correct(self, url):
+        if self.__game is not None:
+            self.__ui.guess_partial_correct(url)
 
     def guess_correct(self):
         if self.__game is not None:
-            pass
+            self.__ui.guess_correct()
 
     def verse_guessed(self, points: int, url: str, player: str):
         if self.__game is not None:
-            pass
+            self.__score += points
+            self.__ui.verse_guessed(points, url, player)
 
     def game_over(self, players: list[str], scores: list[int]):
         if self.__game is not None:
-            pass
+            self.__ui.game_over(players, scores)
 
     def update(self):
         if self.__game is not None:

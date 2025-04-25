@@ -32,8 +32,9 @@ def unpack_varint(conn: socket) -> int:
     return data
 
 def pack_string(text: str) -> bytes:
-    data = pack_varint(len(text))
-    data += text.encode('utf-8')
+    utf = text.encode('utf-8')
+    data = pack_varint(len(utf))
+    data += utf
     return data
 
 def unpack_string(conn: socket) -> str:
