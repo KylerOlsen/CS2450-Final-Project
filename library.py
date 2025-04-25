@@ -19,8 +19,9 @@ class Library:
     __host: str
     __port: int
     __socket: socket.socket
+    __bible_only: bool
 
-    def __init__(self, host: str = '', port: int = 7788):
+    def __init__(self, host: str = '', port: int = 7788, *, bible_only: bool = False):
         with open("data/scripture-frequencies.json", encoding='utf-8') as file:
             self.__verses = json.load(file)
         self.__games = []
@@ -28,6 +29,8 @@ class Library:
         self.__host = host
         self.__port = port
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.__bible_only = bible_only
 
     def serve_forever(self):
         try:
@@ -108,13 +111,17 @@ class Library:
 
         difficulty_verses = []
         for key, value in self.__verses.items():
+            if self.__bible_only and not (key.startswith('/ot') or key.startswith('/nt')):
+                continue
             for i, diff in enumerate(value):
                 if real_difficulty_lower <= diff <= real_difficulty_upper:
                     difficulty_verses.append(f"{key}/{i+1}")
+
+        if not difficulty_verses: difficulty_verses.append('/pgp/js-h/1/17')
 
         return difficulty_verses
 
 
 if __name__ == '__main__':
-    lib = Library()
+    lib = Library(bible_only=False)
     lib.serve_forever()
