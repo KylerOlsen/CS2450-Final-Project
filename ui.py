@@ -64,6 +64,9 @@ class UI:
             )
         else:
             if url:
+                try: ref = convert_url(url)
+                except Exception: ref = url.upper().replace('/','.').strip('.')
+                print(f"Your input was interpreted as: {ref}")
                 self.__player.guess_reference(url)
                 return
             elif possible:
@@ -85,7 +88,8 @@ class UI:
         self.__player.new_round(difficulty)
 
     def player_joined(self, name: str):
-        print(f"{name} Joined the Game")
+        if name == self.__player.name: print(f"* {name} Joined the Game *")
+        else: print(f"{name} Joined the Game")
 
     def new_verse(self, text: str):
         self.__reset()
@@ -101,6 +105,7 @@ class UI:
         try: ref = convert_url(url)
         except Exception: ref = url.upper().replace('/','.').strip('.')
         print(f"That guess was partially correct: {ref}")
+        print(self.__verse)
 
     def guess_correct(self):
         print("That guess was correct!")
@@ -117,7 +122,7 @@ class UI:
     def game_over(self, players: list[str], scores: list[int]):
         self.__game_over = True
         print("\n--- THANKS FOR PLAYING! ---")
-        for player, score in players, scores:
+        for player, score in zip(players, scores):
             if player == self.__player.name:
                 print(f"  * {player}: {score} *")
             else:
