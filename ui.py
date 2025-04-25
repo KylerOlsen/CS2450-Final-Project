@@ -10,6 +10,7 @@ class UI:
     __player: Player
     __verse: str
     __in_game: bool
+    __in_between_rounds: bool
     __game_over: bool
     __term: Terminal
     __buffer: str
@@ -19,6 +20,7 @@ class UI:
         self.__player.join_game(host, port)
         self.__verse = ""
         self.__in_game = False
+        self.__in_between_rounds = False
         self.__game_over = False
         self.__term = Terminal()
         self.__buffer = ""
@@ -50,9 +52,24 @@ class UI:
         while not self.__game_over:
             self.__player.update()
             if text := self.get_line():
-                if self.__in_game: self.__guess_ref(text)
-                elif text == 'Start Game': self.__start_game()
+                if self.__in_between_rounds and self.__player.admin:
+                    self.__next_round(text)
+                elif self.__in_between_rounds:
+                    print("Waiting for the next round to start...")
+                elif self.__in_game: self.__guess_ref(text)
+                elif self.__player.admin: self.__start_game(text)
+                else:
+                    print("Waiting for the game to start...")
             sleep(0.1)
+
+    def __next_round(self, text: str):
+        if text.isdigit() and 0 <= int(text) <= 10:
+            print(f"Starting round with difficulty: {text}")
+            self.__player.new_round(int(text))
+        elif text.lower() == 'e':
+            self.__player.end_game()
+        else:
+            print("Invalid input!\nPlease enter a difficulty level between 1 and 10.")
 
     def __guess_ref(self, text: str):
         try:
@@ -83,17 +100,25 @@ class UI:
                 )
         print(self.__verse)
 
-    def __start_game(self, difficulty: int = 1):
+    def __start_game(self, text: str = "1"):
+        print("Starting game...")
+        self.__in_between_rounds = True
         self.__player.start_game()
-        self.__player.new_round(difficulty)
+        self.__next_round(text)
 
-    def player_joined(self, name: str):
-        if name == self.__player.name: print(f"* {name} Joined the Game *")
+    def player_joined(self, name: str, admin: bool):
+        if name == self.__player.name:
+            if admin:
+                print("You are the game host.")
+                print("Please enter the difficulty for the first round to start the game.")
+                print("(Difficulty Range: 1 Easy - 10 Hard)")
+            print(f"* {name} Joined the Game *")
         else: print(f"{name} Joined the Game")
 
     def new_verse(self, text: str):
         self.__reset()
         self.__in_game = True
+        self.__in_between_rounds = False
         self.__verse = text
         print(self.__verse)
 
@@ -118,6 +143,9 @@ class UI:
             f"The reference is {ref}.\n"
             f"You have been awarded {points} points for your guess."
         )
+        self.__in_between_rounds = True
+        if self.__player.admin:
+            print("Please enter the difficulty for the next round (1-10) or 'e' to end the game.")
 
     def game_over(self, players: list[str], scores: list[int]):
         self.__game_over = True

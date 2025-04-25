@@ -3,7 +3,7 @@
 # Apr 2025
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 import select
 import datetime
 import network_utilities
@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 class Game:
 
+    FINAL_SCORE_LIST: ClassVar[int] = 50
+
     __library: Library
     __current_url: str
     __current_url_parts: list[str]
@@ -24,6 +26,7 @@ class Game:
     __active: bool
     __finished: bool
     __created: datetime.datetime
+    __difficulty: int
 
     def __init__(self, library: Library):
         self.__library = library
@@ -35,6 +38,7 @@ class Game:
         self.__active = False
         self.__finished = False
         self.__created = datetime.datetime.now()
+        self.__difficulty = 0
 
     @property
     def active(self) -> bool: return self.__active
@@ -45,18 +49,24 @@ class Game:
     def add_player(self, name: str, conn: socket):
         if not self.__active:
             new_player = Player(name, self, conn)
-            for player in self.__clients:
-                new_player.player_joined(player.name)
-            self.__clients.append(new_player)
-            self.__total_scores.append(0)
-            for player in self.__clients:
-                player.player_joined(name)
+            if self.__clients:
+                for player in self.__clients:
+                    new_player.player_joined(player.name, False)
+                self.__clients.append(new_player)
+                self.__total_scores.append(0)
+                for player in self.__clients:
+                    player.player_joined(name, False)
+            else:
+                new_player.player_joined(new_player.name, True)
+                self.__clients.append(new_player)
+                self.__total_scores.append(0)
 
     def start_game(self):
         self.__active = True
 
     def start_round(self, difficulty: int):
         if self.__active and not self.__finished:
+            self.__difficulty = difficulty
             self.__round_points = [0] * len(self.__clients)
             self.__library.get_verse(difficulty, self)
 
@@ -70,12 +80,11 @@ class Game:
         if self.__active and not self.__finished:
             if url == self.__current_url:
                 player.guess_correct()
-                self.__round_points[self.__clients.index(player)] = 4
+                self.__round_points[self.__clients.index(player)] = 4 + self.__difficulty
                 for i, points in enumerate(self.__round_points):
                     self.__total_scores[i] += points
                     self.__clients[i].verse_guessed(
                         points, self.__current_url, player.name)
-                self.end_game()
             else:
                 partially_correct = []
                 for player_url, current_url in zip(url.strip('/').split('/'), self.__current_url_parts):
@@ -88,9 +97,24 @@ class Game:
 
     def end_game(self):
         self.__finished = True
+        items = sorted(
+            [(i.name, j) for i, j in zip(self.__clients, self.__total_scores)],
+            reverse=True,
+            key=lambda o: o[1]
+        )
+        players = [i for i, _ in items]
+        scores = [i for _, i in items]
         for player in self.__clients:
-            player.game_over(
-                [i.name for i in self.__clients], self.__total_scores)
+            if player.name in players[:Game.FINAL_SCORE_LIST]:
+                player.game_over(
+                    players[:Game.FINAL_SCORE_LIST],
+                    scores[:Game.FINAL_SCORE_LIST]
+                )
+            else:
+                player.game_over(
+                    players[:Game.FINAL_SCORE_LIST] + [player.name],
+                    scores[:Game.FINAL_SCORE_LIST] + [scores[players.index(player.name)]]
+                )
 
     def update(self):
         if not self.__active and (
@@ -121,10 +145,11 @@ class Player:
     @property
     def name(self) -> str: return self.__name
 
-    def player_joined(self, name: str):
-        print(f">> (1, {self.name}) player_joined({name})")
+    def player_joined(self, name: str, admin: bool):
+        print(f">> (1, {self.name}) player_joined({name}, {admin})")
         data = network_utilities.pack_varint(1)
         data += network_utilities.pack_string(name)
+        data += network_utilities.pack_varint(admin)
         self.__client.send(data)
 
     def new_verse(self, text: str):
@@ -145,7 +170,7 @@ class Player:
         self.__client.send(data)
 
     def guess_correct(self):
-        print(">> (4, {self.name}) guess_correct()")
+        print(f">> (4, {self.name}) guess_correct()")
         data = network_utilities.pack_varint(4)
         self.__client.send(data)
 
@@ -180,7 +205,7 @@ class Player:
                     self.__game.start_round(difficulty)
                 elif packet_id == 4:
                     url = network_utilities.unpack_string(self.__client)
-                    print(f"<< (4, {self.name}) guess_reference({url}, {self.name})")
+                    print(f"<< (4, {self.name}) guess_reference({url})")
                     self.__game.guess_reference(url, self)
                 elif packet_id == 5:
                     print(f"<< (5, {self.name}) end_game()")

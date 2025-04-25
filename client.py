@@ -45,7 +45,8 @@ class Game:
             packet_id = network_utilities.unpack_varint(self.__server)
             if packet_id == 1:
                 name = network_utilities.unpack_string(self.__server)
-                self.__player.player_joined(name)
+                admin = bool(network_utilities.unpack_varint(self.__server))
+                self.__player.player_joined(name, admin)
             elif packet_id == 2:
                 text = network_utilities.unpack_string(self.__server)
                 self.__player.new_verse(text)
@@ -74,6 +75,7 @@ class Player:
     __score: int
     __game: Game | None
     __ui: UI
+    __admin: bool
 
     def __init__(self, name: str, ui: UI):
         self.__name = name
@@ -81,6 +83,7 @@ class Player:
         self.__score = 0
         self.__game = None
         self.__ui = ui
+        self.__admin = False
 
     @property
     def name(self) -> str: return self.__name
@@ -90,6 +93,9 @@ class Player:
 
     @property
     def score(self) -> int: return self.__score
+
+    @property
+    def admin(self) -> bool: return self.__admin
 
     def join_game(self, host: str = 'localhost', port: int = 7788):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,9 +121,10 @@ class Player:
         if self.__game is not None:
             self.__game.end_game()
 
-    def player_joined(self, name: str):
+    def player_joined(self, name: str, admin: bool):
         if self.__game is not None:
-            self.__ui.player_joined(name)
+            if name == self.name: self.__admin = admin or self.__admin
+            self.__ui.player_joined(name, admin)
 
     def new_verse(self, text: str):
         if self.__game is not None:
