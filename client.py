@@ -51,6 +51,9 @@ class Game:
                 self.__player.new_verse(text)
             elif packet_id == 3:
                 self.__player.guess_incorrect()
+            elif packet_id == 7:
+                url = network_utilities.unpack_string(self.__server)
+                self.__player.guess_partial_correct(url)
             elif packet_id == 4:
                 self.__player.guess_correct()
             elif packet_id == 5:
@@ -124,6 +127,10 @@ class Player:
     def guess_incorrect(self):
         if self.__game is not None:
             self.__ui.guess_incorrect()
+
+    def guess_partial_correct(self, url):
+        if self.__game is not None:
+            self.__ui.guess_partial_correct(url)
 
     def guess_correct(self):
         if self.__game is not None:

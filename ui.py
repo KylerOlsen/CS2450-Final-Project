@@ -42,6 +42,10 @@ class UI:
                 print(val, end='', flush=True)
         return None
 
+    def __reset(self):
+        self.__buffer = ""
+        print()
+
     def loop(self):
         while not self.__game_over:
             self.__player.update()
@@ -84,6 +88,7 @@ class UI:
         print(f"{name} Joined the Game")
 
     def new_verse(self, text: str):
+        self.__reset()
         self.__in_game = True
         self.__verse = text
         print(self.__verse)
@@ -92,6 +97,11 @@ class UI:
         print("That guess was incorrect.")
         print(self.__verse)
 
+    def guess_partial_correct(self, url):
+        try: ref = convert_url(url)
+        except Exception: ref = url.upper().replace('/','.').strip('.')
+        print(f"That guess was partially correct: {ref}")
+
     def guess_correct(self):
         print("That guess was correct!")
 
@@ -99,14 +109,14 @@ class UI:
         try: ref = convert_url(url)
         except Exception: ref = url.upper().replace('/','.').strip('.')
         print(
-            f"The verse has been guessed by {player}.\n"
+            f"\nThe verse has been guessed by {player}.\n"
             f"The reference is {ref}.\n"
             f"You have been awarded {points} points for your guess."
         )
 
     def game_over(self, players: list[str], scores: list[int]):
         self.__game_over = True
-        print("--- THANKS FOR PLAYING! ---")
+        print("\n--- THANKS FOR PLAYING! ---")
         for player, score in players, scores:
             if player == self.__player.name:
                 print(f"  * {player}: {score} *")

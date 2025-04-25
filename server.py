@@ -17,6 +17,7 @@ class Game:
 
     __library: Library
     __current_url: str
+    __current_url_parts: list[str]
     __clients: list[Player]
     __round_points: list[int]
     __total_scores: list[int]
@@ -27,6 +28,7 @@ class Game:
     def __init__(self, library: Library):
         self.__library = library
         self.__current_url = ""
+        self.__current_url_parts = []
         self.__clients = []
         self.__round_points = []
         self.__total_scores = []
@@ -58,18 +60,27 @@ class Game:
     def new_verse(self, url: str, text: str):
         for player in self.__clients:
             self.__current_url = url
+            self.__current_url_parts = url.strip('/').split('/')
             player.new_verse(text)
 
     def guess_reference(self, url: str, player: Player):
         if self.__active and not self.__finished:
             if url == self.__current_url:
                 player.guess_correct()
+                self.__round_points[self.__clients.index(player)] = 4
                 for i, points in enumerate(self.__round_points):
                     self.__total_scores[i] += points
                     self.__clients[i].verse_guessed(
                         points, self.__current_url, player.name)
             else:
-                player.guess_incorrect()
+                partially_correct = []
+                for player_url, current_url in zip(url.strip('/').split('/'), self.__current_url_parts):
+                    if player_url == current_url:
+                        partially_correct.append(current_url)
+                if partially_correct:
+                    player.guess_partial_correct(f"/{'/'.join(partially_correct)}")
+                    self.__round_points[self.__clients.index(player)] = len(partially_correct)
+                else: player.guess_incorrect()
 
     def end_game(self):
         self.__finished = True
@@ -119,6 +130,12 @@ class Player:
     def guess_incorrect(self):
         print(">> (3) guess_incorrect()")
         data = network_utilities.pack_varint(3)
+        self.__client.send(data)
+
+    def guess_partial_correct(self, url):
+        print(f">> (7) guess_partial_correct({url})")
+        data = network_utilities.pack_varint(7)
+        data += network_utilities.pack_string(url)
         self.__client.send(data)
 
     def guess_correct(self):
