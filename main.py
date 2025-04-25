@@ -22,25 +22,26 @@ def name_gen():
         "kind", "lively", "logical", "lovely", "loyal", "lucky", "mature",
         "mindful", "modest",
     ]
-    nouns = [
-        "Cello", "Badger", "Fish", "Apple", "Mountain", "River", "Teacher",
-        "Book", "Car", "Tree", "Dog", "House", "Chair", "Phone", "Computer",
-        "City", "Ocean", "Guitar", "Desk", "Flower", "Star", "Sky", "Window",
-        "Road", "Train", "Plane", "School", "Garden", "Table", "Bottle",
-        "Shirt", "Door", "Bridge", "Watch", "Camera", "Bag", "Pencil", "Cup",
-        "Hat", "Wall", "Cloud", "Island", "Forest", "Room", "Engine", "Shoe",
-        "Candle", "Bed", "Lamp", "Mirror", "Clock", "Keyboard", "Mouse",
-        "Blanket", "Pillow", "Soap", "Towel", "Toothbrush", "Backpack",
-        "Basket", "Fan", "Television", "Magazine", "Newspaper", "Statue",
-        "Painting", "Ladder", "Fence", "Rope", "Ball", "Drum", "Violin",
-        "Microphone", "Box", "Shelf", "Ring", "Necklace", "Coin", "Wallet",
-        "Purse", "Ticket", "Key", "Lock", "Brush", "Comb", "Notebook",
-        "Envelope", "Stamp", "Hammer", "Screwdriver", "Nail", "Saw", "Plank",
-        "Brick", "Tile", "Carpet", "Curtain", "Apron", "Oven", "Refrigerator",
-        "Blender", "Pot", "Pan",
+    animals = [
+        "aardvark", "albatross", "alligator", "alpaca", "ant", "anteater",
+        "antelope", "ape", "armadillo", "baboon", "badger", "barracuda", "bat",
+        "bear", "beaver", "bee", "beetle", "bison", "boar",
+        "bobcat", "buffalo", "butterfly", "camel", "canary", "capybara",
+        "caracal", "caribou", "cassowary", "cat", "caterpillar", "cattle",
+        "chameleon", "cheetah", "chicken", "chimpanzee", "chinchilla", "cobra",
+        "cockatoo", "cougar", "cow", "coyote", "crab", "crane", "crocodile",
+        "crow", "deer", "dingo", "dog", "dolphin", "donkey", "dove",
+        "dragonfly", "duck", "eagle", "echidna", "eel", "elephant", "elk",
+        "emu", "falcon", "ferret", "finch", "firefly", "fish", "flamingo",
+        "fly", "fox", "frog", "gazelle", "gecko", "giraffe", "goat", "goldfish",
+        "goose", "gorilla", "grasshopper", "pig", "gull", "hamster",
+        "hare", "hawk", "hedgehog", "hippopotamus", "horse",
+        "hummingbird", "hyena", "iguana", "jackal", "jaguar",
+        "jellyfish", "kangaroo", "kingfisher", "koala", "lemur",
+        "leopard", "lion", "lizard", "llama",
     ]
 
-    return random.choice(adjectives).capitalize() + random.choice(nouns)
+    return random.choice(adjectives).capitalize() + random.choice(animals).capitalize()
 
 def server(host: str='', port: int=7788):
     from library import Library
