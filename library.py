@@ -65,6 +65,7 @@ class Library:
 
     def get_verse(self, difficulty: int, game: Game):
         url = self.__select_verse(difficulty)
+        print(f"Verse Selected: {url}")
         text = self.__get_verse_text(url)
 
         game.new_verse(url, text)

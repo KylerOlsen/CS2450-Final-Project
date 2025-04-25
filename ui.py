@@ -1,5 +1,6 @@
 
 from client import Player
+from reference import convert_reference, convert_url
 from time import sleep
 from blessed import Terminal
 
@@ -45,12 +46,39 @@ class UI:
         while not self.__game_over:
             self.__player.update()
             if text := self.get_line():
-                if self.__in_game:
-                    self.__player.guess_reference(text)
-                elif text == 'Start Game':
-                    self.__player.start_game()
-                    self.__player.new_round(1)
+                if self.__in_game: self.__guess_ref(text)
+                elif text == 'Start Game': self.__start_game()
             sleep(0.1)
+
+    def __guess_ref(self, text: str):
+        try:
+            url, possible = convert_reference(text)
+        except Exception:
+            print(
+                "An Unknown Error Occurred.\n"
+                "Please Check Your Reference and Try Again."
+            )
+        else:
+            if url:
+                self.__player.guess_reference(url)
+                return
+            elif possible:
+                print(
+                    "Sorry, that reference could not be found.\n"
+                    "Did you mean one of these:"
+                )
+                for i in possible:
+                    print(i)
+            else:
+                print(
+                    "Sorry, that reference could not be found.\n"
+                    "Please Check Your Reference and Try Again."
+                )
+        print(self.__verse)
+
+    def __start_game(self, difficulty: int = 1):
+        self.__player.start_game()
+        self.__player.new_round(difficulty)
 
     def player_joined(self, name: str):
         print(f"{name} Joined the Game")
@@ -68,8 +96,13 @@ class UI:
         print("That guess was correct!")
 
     def verse_guessed(self, points: int, url: str, player: str):
-        print(f"The verse has been guessed. It is {url}.")
-        print(f"You have been awarded {points} points for your guess.")
+        try: ref = convert_url(url)
+        except Exception: ref = url.upper().replace('/','.').strip('.')
+        print(
+            f"The verse has been guessed by {player}.\n"
+            f"The reference is {ref}.\n"
+            f"You have been awarded {points} points for your guess."
+        )
 
     def game_over(self, players: list[str], scores: list[int]):
         self.__game_over = True
