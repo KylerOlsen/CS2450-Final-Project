@@ -90,6 +90,8 @@ class Game:
                 for player_url, current_url in zip(url.strip('/').split('/'), self.__current_url_parts):
                     if player_url == current_url:
                         partially_correct.append(current_url)
+                    else:
+                        break
                 if partially_correct:
                     player.guess_partial_correct(f"/{'/'.join(partially_correct)}")
                     self.__round_points[self.__clients.index(player)] = len(partially_correct)
