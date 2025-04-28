@@ -1,3 +1,6 @@
+# Kyler Olsen
+# CS 2450 Final Project
+# Apr 2025
 
 from client import Player
 from reference import convert_reference, convert_url

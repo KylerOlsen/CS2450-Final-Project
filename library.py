@@ -35,6 +35,7 @@ class Library:
     def serve_forever(self):
         try:
             print(f"Starting server at {self.__host}:{self.__port}")
+            if self.__bible_only: print("Bible-only mode active.")
             with self.__socket as s:
                 s.bind((self.__host, self.__port))
                 s.listen(1)

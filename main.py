@@ -1,4 +1,8 @@
+# Kyler Olsen
+# CS 2450 Final Project
+# Apr 2025
 
+import argparse
 import random
 
 def name_gen():
@@ -43,18 +47,41 @@ def name_gen():
 
     return random.choice(adjectives).capitalize() + random.choice(animals).capitalize()
 
-def server(host: str='', port: int=7788):
+def server(host: str='', port: int=7788, bible_only: bool=False):
     from library import Library
-    lib = Library(host, port)
+    lib = Library(host, port, bible_only=bible_only)
     lib.serve_forever()
 
-def client(playername: str, host: str='localhost', port: int=7788):
+def client(playername: str = "", host: str='localhost', port: int=7788):
     from ui import UI
+    if not playername: playername = name_gen()
     ui = UI(playername, host, port)
     ui.loop()
 
-def main():
-    client(name_gen())
+def main(argv):
+    parser = argparse.ArgumentParser(description="Run the server or client.")
+    parser.add_argument(
+        "-s", "--server", action="store_true", help="Run as server"
+    )
+    parser.add_argument(
+        "-H", "--host", type=str, default="", help="Host address (default: '')"
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, default=7788, help="Port number (default: 7788)"
+    )
+    parser.add_argument(
+        "-n", "--playername", type=str, default="", help="Player name (for client)"
+    )
+    parser.add_argument(
+        "-b", "--bible-only", action="store_true", help="Run in bible-only mode (for server)"
+    )
+    args = parser.parse_args(argv[1:])
+
+    if args.server:
+        server(host=args.host, port=args.port, bible_only=args.bible_only)
+    else:
+        client(playername=args.playername, host=args.host or 'localhost', port=args.port)
 
 if __name__ == "__main__":
-    main()
+    from sys import argv
+    main(argv)
