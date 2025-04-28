@@ -1,3 +1,6 @@
+# Kyler Olsen
+# CS 2450 Final Project
+# Apr 2025
 
 import random
 
