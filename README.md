@@ -10,24 +10,25 @@
 
 Python 3.10 or greater is recommended.
 
-In the root of the repo run this command.
-```pip install -r requirements.txt```
+In the root of the repo run this command to install the required python modules.
+
+```$ pip install -r requirements.txt```
 
 ## Running
 
-The following command with run the server.
+The following command to run the server.
 
-```python3 main.py -s```
+```$ python3 main.py -s```
 
-The following command with run the client.
+The following command to run the client.
 
-```python3 main.py```
+```$ python3 main.py```
 
 Here are the options for running.
 
 ```
 $ python3 main.py -h
-usage: main.py [-h] [-s] [-H HOST] [-p PORT] [-n PLAYERNAME]
+usage: main.py [-h] [-s] [-H HOST] [-p PORT] [-n PLAYERNAME] [-b]
 
 Run the server or client.
 
@@ -38,4 +39,5 @@ options:
   -p PORT, --port PORT  Port number (default: 7788)
   -n PLAYERNAME, --playername PLAYERNAME
                         Player name (for client)
+  -b, --bible-only      Run in bible-only mode (for server)
 ```
